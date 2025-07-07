@@ -1,0 +1,81 @@
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-6">
+            <img src="{{product.image}}" class="img-fluid rounded" alt="{{product.title}}" style="max-height: 400px; object-fit: contain;">
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="card-title">{{product.title}}</h1>
+                    <p class="card-text lead">{{product.description}}</p>
+                    <div class="product-info mt-4">
+                        <p class="h4 text-primary">Precio: ${{product.price}}</p>
+                        <p><strong>Categoría:</strong> {{product.category}}</p>
+                        <p><strong>Stock:</strong> {{product.stock}}</p>
+                        <p><strong>Estado:</strong> {{#if product.available}}<span class="text-success">Disponible</span>{{else}}<span class="text-danger">No disponible</span>{{/if}}</p>
+                    </div>
+                    <div class="actions mt-4">
+                        <div class="d-flex gap-2">
+                            <button onclick="addToCart('{{product._id}}')" class="btn btn-primary btn-lg flex-grow-1">
+                                <i class="fas fa-shopping-cart"></i> Agregar al carrito
+                            </button>
+                            <a href="/products" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-left"></i> Volver
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Obtener o crear cartId en localStorage
+async function getOrCreateCartId() {
+    let cartId = localStorage.getItem('cartId');
+    if (!cartId) {
+        try {
+            const res = await fetch('/api/carts', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' } 
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                cartId = data.payload._id;
+                localStorage.setItem('cartId', cartId);
+            } else {
+                throw new Error('Error al crear carrito');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al crear carrito');
+            return null;
+        }
+    }
+    return cartId;
+}
+
+async function addToCart(productId) {
+    const cartId = await getOrCreateCartId();
+    if (!cartId) return;
+    
+    try {
+        const res = await fetch(`/api/carts/${cartId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ product: productId, quantity: 1 })
+        });
+        
+        if (res.ok) {
+            alert('Producto agregado al carrito!');
+        } else {
+            const errorData = await res.json();
+            alert('Error al agregar al carrito: ' + (errorData.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al agregar al carrito');
+    }
+}
+</script>

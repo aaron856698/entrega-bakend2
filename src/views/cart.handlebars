@@ -1,0 +1,99 @@
+<div class="container mt-4">
+    <h1>Carrito de Compras</h1>
+    {{#if cart.products.length}}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Precio</th>
+                    <th>Cantidad</th>
+                    <th>Subtotal</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each cart.products}}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <img src="{{this.product.image}}" 
+                                 alt="{{this.product.title}}" 
+                                 class="me-3" 
+                                 style="width: 60px; height: 60px; object-fit: contain;">
+                            <div>
+                                <strong>{{this.product.title}}</strong>
+                                <br>
+                                <small class="text-muted">{{this.product.description}}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${{this.product.price}}</td>
+                    <td>
+                        <input type="number" 
+                               value="{{this.quantity}}" 
+                               min="1" 
+                               onchange="updateQuantity('{{../cart._id}}', '{{this.product._id}}', this.value)"
+                               class="form-control" 
+                               style="width: 80px">
+                    </td>
+                    <td>${{multiply this.product.price this.quantity}}</td>
+                    <td>
+                        <button onclick="removeProduct('{{../cart._id}}', '{{this.product._id}}')" 
+                                class="btn btn-danger btn-sm">
+                            Eliminar
+                        </button>
+                    </td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            <button onclick="emptyCart('{{cart._id}}')" class="btn btn-warning">
+                Vaciar Carrito
+            </button>
+            <div class="total">
+                <h4>Total: ${{calculateTotal cart.products}}</h4>
+            </div>
+        </div>
+    </div>
+    {{else}}
+    <div class="alert alert-info">
+        El carrito está vacío. <a href="/products">Ver productos</a>
+    </div>
+    {{/if}}
+</div>
+
+<script>
+async function updateQuantity(cartId, productId, quantity) {
+    const res = await fetch(`/api/carts/${cartId}/products/${productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity: Number(quantity) })
+    });
+    if (res.ok) {
+        location.reload();
+    } else {
+        alert('Error al actualizar cantidad');
+    }
+}
+
+async function removeProduct(cartId, productId) {
+    const res = await fetch(`/api/carts/${cartId}/products/${productId}`, { method: 'DELETE' });
+    if (res.ok) {
+        location.reload();
+    } else {
+        alert('Error al eliminar producto');
+    }
+}
+
+async function emptyCart(cartId) {
+    const res = await fetch(`/api/carts/${cartId}`, { method: 'DELETE' });
+    if (res.ok) {
+        location.reload();
+    } else {
+        alert('Error al vaciar carrito');
+    }
+}
+</script>
