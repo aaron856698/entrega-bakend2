@@ -1,5 +1,7 @@
 import { Router } from "express";
-import { productModel } from "../models/product.model.js";
+import passport from "passport";
+import { productRepository } from "../repositories/product.repository.js";
+import { isAdmin } from "../middleware/authorization.js";
 
 const router = Router();
 
@@ -20,11 +22,11 @@ router.get("/", async (req, res) => {
         if (query) {
             filter.$or = [
                 { category: { $regex: query, $options: 'i' } },
-                { available: query === 'true' }
+                { status: query === 'true' }
             ];
         }
 
-        const result = await productModel.paginate(filter, options);
+        const result = await productRepository.findWithFilter(filter, options);
 
         const baseUrl = `${req.protocol}://${req.get('host')}${req.baseUrl}`;
 
@@ -47,11 +49,68 @@ router.get("/", async (req, res) => {
 
 router.get("/:pid", async (req, res) => {
     try {
-        const product = await productModel.findById(req.params.pid).lean();
+        const product = await productRepository.findById(req.params.pid);
         if (!product) {
             return res.status(404).json({ status: "error", error: "Product not found" });
         }
         res.json({ status: "success", payload: product });
+    } catch (error) {
+        res.status(500).json({ status: "error", error: error.message });
+    }
+});
+
+router.post("/", passport.authenticate("jwt", { session: false }), isAdmin, async (req, res) => {
+    try {
+        const { title, description, code, price, stock, category, thumbnails } = req.body;
+        
+        if (!title || !description || !code || !price || !stock || !category) {
+            return res.status(400).json({ error: "Todos los campos son obligatorios" });
+        }
+        
+        const existingProduct = await productRepository.findByCode(code);
+        if (existingProduct) {
+            return res.status(400).json({ error: "El código del producto ya existe" });
+        }
+        
+        const product = await productRepository.create({
+            title,
+            description,
+            code,
+            price,
+            stock,
+            category,
+            thumbnails: thumbnails || []
+        });
+        
+        res.status(201).json({ status: "success", payload: product });
+    } catch (error) {
+        res.status(500).json({ status: "error", error: error.message });
+    }
+});
+
+router.put("/:pid", passport.authenticate("jwt", { session: false }), isAdmin, async (req, res) => {
+    try {
+        const product = await productRepository.findById(req.params.pid);
+        if (!product) {
+            return res.status(404).json({ error: "Producto no encontrado" });
+        }
+        
+        const updatedProduct = await productRepository.update(req.params.pid, req.body);
+        res.json({ status: "success", payload: updatedProduct });
+    } catch (error) {
+        res.status(500).json({ status: "error", error: error.message });
+    }
+});
+
+router.delete("/:pid", passport.authenticate("jwt", { session: false }), isAdmin, async (req, res) => {
+    try {
+        const product = await productRepository.findById(req.params.pid);
+        if (!product) {
+            return res.status(404).json({ error: "Producto no encontrado" });
+        }
+        
+        await productRepository.delete(req.params.pid);
+        res.json({ status: "success", message: "Producto eliminado correctamente" });
     } catch (error) {
         res.status(500).json({ status: "error", error: error.message });
     }

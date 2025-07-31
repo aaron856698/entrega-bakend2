@@ -2,19 +2,14 @@ import mongoose from "mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
 
 const productSchema = mongoose.Schema({
-    title: String,
-    description: String,
-    price: Number,
-    category: String,
-    stock: Number,
-    available: {
-        type: Boolean,
-        default: true
-    },
-    image: {
-        type: String,
-        default: "/images/logo.svg"
-    }
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    code: { type: String, required: true, unique: true },
+    price: { type: Number, required: true },
+    status: { type: Boolean, default: true },
+    stock: { type: Number, required: true },
+    category: { type: String, required: true },
+    thumbnails: { type: [String], default: [] }
 });
 
 productSchema.plugin(mongoosePaginate);

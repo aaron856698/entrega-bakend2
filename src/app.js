@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import handlebars from "express-handlebars";
 import path from "path";
 import { fileURLToPath } from "url";
+import dotenv from "dotenv";
 import productsRouter from "./routes/products.router.js";
 import cartsRouter from "./routes/carts.router.js";
 import sessionsRouter from "./routes/sessions.router.js";
@@ -11,11 +12,13 @@ import { productModel } from "./models/product.model.js";
 import { cartModel } from "./models/cart.model.js";
 import passport from "./passport.js";
 
+dotenv.config();
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const port = 8081;
+const port = process.env.PORT || 8081;
 
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
@@ -39,31 +42,34 @@ app.get('/products', async (req, res) => {
                     _id: "1",
                     title: "Smartphone XYZ",
                     description: "Un smartphone potente con la última tecnología",
+                    code: "SMART001",
                     price: 599.99,
-                    category: "Electrónicos",
+                    status: true,
                     stock: 50,
-                    available: true,
-                    image: "/images/smartphone.jpg"
+                    category: "Electrónicos",
+                    thumbnails: ["/images/smartphone.jpg"]
                 },
                 {
                     _id: "2",
                     title: "Laptop Pro",
                     description: "Laptop profesional para trabajo y gaming",
+                    code: "LAPTOP001",
                     price: 1299.99,
-                    category: "Computadoras",
+                    status: true,
                     stock: 25,
-                    available: true,
-                    image: "/images/laptop.jpg"
+                    category: "Computadoras",
+                    thumbnails: ["/images/laptop.jpg"]
                 },
                 {
                     _id: "3",
                     title: "Auriculares Wireless",
                     description: "Auriculares bluetooth con cancelación de ruido",
+                    code: "AUDIO001",
                     price: 199.99,
-                    category: "Accesorios",
+                    status: true,
                     stock: 100,
-                    available: true,
-                    image: "/images/auiriculares.jpg"
+                    category: "Accesorios",
+                    thumbnails: ["/images/auiriculares.jpg"]
                 }
             ];
             res.render('products', {
@@ -92,7 +98,7 @@ app.get('/products', async (req, res) => {
         if (query) {
             filter.$or = [
                 { category: { $regex: query, $options: 'i' } },
-                { available: query === 'true' }
+                { status: query === 'true' }
             ];
         }
         const result = await productModel.paginate(filter, options);
@@ -120,31 +126,34 @@ app.get('/products/:pid', async (req, res) => {
                     _id: "1",
                     title: "Smartphone XYZ",
                     description: "Un smartphone potente con la última tecnología",
+                    code: "SMART001",
                     price: 599.99,
-                    category: "Electrónicos",
+                    status: true,
                     stock: 50,
-                    available: true,
-                    image: "/images/smartphone.jpg"
+                    category: "Electrónicos",
+                    thumbnails: ["/images/smartphone.jpg"]
                 },
                 "2": {
                     _id: "2",
                     title: "Laptop Pro",
                     description: "Laptop profesional para trabajo y gaming",
+                    code: "LAPTOP001",
                     price: 1299.99,
-                    category: "Computadoras",
+                    status: true,
                     stock: 25,
-                    available: true,
-                    image: "/images/laptop.jpg"
+                    category: "Computadoras",
+                    thumbnails: ["/images/laptop.jpg"]
                 },
                 "3": {
                     _id: "3",
                     title: "Auriculares Wireless",
                     description: "Auriculares bluetooth con cancelación de ruido",
+                    code: "AUDIO001",
                     price: 199.99,
-                    category: "Accesorios",
+                    status: true,
                     stock: 100,
-                    available: true,
-                    image: "/images/auiriculares.jpg"
+                    category: "Accesorios",
+                    thumbnails: ["/images/auiriculares.jpg"]
                 }
             };
             const product = sampleProducts[req.params.pid];
@@ -170,29 +179,32 @@ app.get('/seed', async (req, res) => {
             {
                 title: "Smartphone XYZ",
                 description: "Un smartphone potente con la última tecnología",
+                code: "SMART001",
                 price: 599.99,
-                category: "Electrónicos",
+                status: true,
                 stock: 50,
-                available: true,
-                image: "/images/smartphone.jpg"
+                category: "Electrónicos",
+                thumbnails: ["/images/smartphone.jpg"]
             },
             {
                 title: "Laptop Pro",
                 description: "Laptop profesional para trabajo y gaming",
+                code: "LAPTOP001",
                 price: 1299.99,
-                category: "Computadoras",
+                status: true,
                 stock: 25,
-                available: true,
-                image: "/images/laptop.jpg"
+                category: "Computadoras",
+                thumbnails: ["/images/laptop.jpg"]
             },
             {
                 title: "Auriculares Wireless",
                 description: "Auriculares bluetooth con cancelación de ruido",
+                code: "AUDIO001",
                 price: 199.99,
-                category: "Accesorios",
+                status: true,
                 stock: 100,
-                available: true,
-                image: "/images/auiriculares.jpg"
+                category: "Accesorios",
+                thumbnails: ["/images/auiriculares.jpg"]
             }
         ];
         await productModel.deleteMany({});
@@ -239,7 +251,7 @@ app.get('/', (req, res) => {
   res.redirect('/products');
 });
 
-mongoose.connect("mongodb+srv://garcenaaron487:k8Mlb5PrR9wFZyHW@cluster0.bgkudnm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+mongoose.connect(process.env.MONGO_URI)
     .then(() => {
         console.log("Conectado a MongoDB Atlas");
         app.listen(port, () => {

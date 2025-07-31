@@ -1,5 +1,8 @@
 import { Router } from "express";
 import { cartModel } from "../models/cart.model.js";
+import { ticketRepository } from "../repositories/ticket.repository.js";
+import passport from "passport";
+import { isUser } from "../middleware/authorization.js";
 
 const router = Router();
 
@@ -22,6 +25,25 @@ router.get("/:cid", async (req, res) => {
         res.json({ status: "success", payload: cart });
     } catch (error) {
         res.status(500).json({ status: "error", error: error.message });
+    }
+});
+
+router.post("/:cid/purchase", passport.authenticate("jwt", { session: false }), isUser, async (req, res) => {
+    try {
+        const cartId = req.params.cid;
+        const userEmail = req.user.email;
+
+        const result = await ticketRepository.processPurchase(cartId, userEmail);
+
+        res.json({
+            status: "success",
+            message: "Compra realizada exitosamente",
+            ticket: result.ticket,
+            productsWithoutStock: result.productsWithoutStock,
+            totalAmount: result.totalAmount
+        });
+    } catch (error) {
+        res.status(400).json({ status: "error", error: error.message });
     }
 });
 

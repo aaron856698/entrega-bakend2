@@ -1,8 +1,10 @@
 import passport from "passport";
 import { Strategy as JwtStrategy, ExtractJwt } from "passport-jwt";
+import { Strategy as LocalStrategy } from "passport-local";
 import { userModel } from "./models/user.model.js";
+import bcrypt from "bcrypt";
 
-const JWT_SECRET = "secretJWTkey"; 
+const JWT_SECRET = "secretJWTkey";
 
 const opts = {
     jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -22,6 +24,32 @@ passport.use(
             return done(err, false);
         }
     })
+);
+
+passport.use(
+    new LocalStrategy(
+        {
+            usernameField: "email",
+            passwordField: "password"
+        },
+        async (email, password, done) => {
+            try {
+                const user = await userModel.findOne({ email });
+                if (!user) {
+                    return done(null, false, { message: "Usuario no encontrado" });
+                }
+                
+                const isValidPassword = bcrypt.compareSync(password, user.password);
+                if (!isValidPassword) {
+                    return done(null, false, { message: "Contraseña incorrecta" });
+                }
+                
+                return done(null, user);
+            } catch (err) {
+                return done(err);
+            }
+        }
+    )
 );
 
 export default passport; 
